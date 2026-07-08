@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站状态展示</title>
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body data-page="display">
+    <main class="app-shell display-page">
+        <header class="topbar">
+            <div>
+                <div class="eyebrow">Site Monitor</div>
+                <h1>网站状态展示</h1>
+                <p class="subtitle">公开展示当前监控站点的在线状态、响应时间、HTTP 状态、SSL 有效期和最近可用率。</p>
+            </div>
+            <div class="top-actions">
+                <button class="button" id="refreshButton" type="button">刷新数据</button>
+            </div>
+        </header>
+
+        <section class="summary-grid" aria-label="状态汇总">
+            <article class="summary-card">
+                <div class="summary-label">监控站点</div>
+                <div class="summary-value" id="totalCount">0</div>
+                <div class="summary-hint" id="lastUpdated">尚未加载</div>
+            </article>
+            <article class="summary-card good">
+                <div class="summary-label">在线</div>
+                <div class="summary-value" id="upCount">0</div>
+                <div class="summary-hint">HTTP 状态正常</div>
+            </article>
+            <article class="summary-card bad">
+                <div class="summary-label">异常</div>
+                <div class="summary-value" id="downCount">0</div>
+                <div class="summary-hint">需尽快排查</div>
+            </article>
+            <article class="summary-card warn">
+                <div class="summary-label">SSL 预警</div>
+                <div class="summary-value" id="sslRiskCount">0</div>
+                <div class="summary-hint">14 天内到期</div>
+            </article>
+            <article class="summary-card">
+                <div class="summary-label">平均响应</div>
+                <div class="summary-value" id="avgResponse">-</div>
+                <div class="summary-hint">最近一次检测</div>
+            </article>
+        </section>
+
+        <section class="panel toolbar public-toolbar" aria-label="筛选和排序">
+            <input class="input" type="search" id="searchInput" placeholder="搜索名称或 URL">
+            <select class="select" id="statusFilter" aria-label="状态筛选">
+                <option value="all">全部状态</option>
+                <option value="up">只看在线</option>
+                <option value="down">只看异常</option>
+                <option value="unknown">只看未知</option>
+                <option value="ssl-risk">SSL 即将到期</option>
+            </select>
+            <select class="select" id="sortSelect" aria-label="排序方式">
+                <option value="priority">异常优先</option>
+                <option value="latest">最近检查</option>
+                <option value="response">响应时间</option>
+                <option value="name">名称排序</option>
+            </select>
+        </section>
+
+        <section id="sitesContainer" aria-live="polite">
+            <div class="loading">
+                <div>
+                    <div class="spinner"></div>
+                    <div>正在加载监控数据...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast" id="toastContainer" aria-live="polite"></div>
+    <script src="/static/app.js" defer></script>
+</body>
+</html>

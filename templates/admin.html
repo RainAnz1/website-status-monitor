@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站状态监控后台</title>
+    <link rel="stylesheet" href="/static/app.css">
+</head>
+<body data-page="admin">
+    <main class="app-shell admin-page">
+        <header class="topbar">
+            <div>
+                <div class="eyebrow">Admin Console</div>
+                <h1>网站状态监控后台</h1>
+                <p class="subtitle">在这里添加监控站点、手动检测、查看历史记录和维护站点列表。公开展示页访问地址为首页 `/`。</p>
+            </div>
+            <div class="top-actions">
+                <a class="button" href="/">查看展示页</a>
+                <button class="button" id="refreshButton" type="button">刷新数据</button>
+                <button class="button primary" id="checkAllButton" type="button" disabled>检测全部</button>
+            </div>
+        </header>
+
+        <section class="panel settings-panel" aria-label="自动刷新设置">
+            <div class="section-heading">
+                <h2 class="section-title">自动刷新设置</h2>
+                <span class="section-note">这个设置会保存在当前浏览器里，填 0 表示关闭</span>
+            </div>
+            <div class="refresh-form">
+                <div class="field">
+                    <label for="refreshInterval">刷新间隔（秒）</label>
+                    <input class="input" id="refreshInterval" type="number" min="0" max="3600" step="1">
+                </div>
+                <button class="button primary" id="saveRefreshButton" type="button">保存设置</button>
+                <div class="refresh-status" id="refreshStatus">自动刷新：60 秒后</div>
+            </div>
+        </section>
+
+        <section class="panel add-panel" aria-label="添加监控网站">
+            <div class="section-heading">
+                <h2 class="section-title">添加监控网站</h2>
+                <span class="section-note">可以直接输入域名，系统会默认补全 https://</span>
+            </div>
+            <form class="add-form" id="addForm">
+                <div class="field">
+                    <label for="siteName">网站名称</label>
+                    <input class="input" type="text" id="siteName" placeholder="例如：公司官网" autocomplete="off" required>
+                </div>
+                <div class="field">
+                    <label for="siteUrl">网站地址</label>
+                    <input class="input" type="text" id="siteUrl" placeholder="example.com 或 https://example.com" autocomplete="off" required>
+                </div>
+                <button class="button primary" id="addButton" type="submit">添加站点</button>
+            </form>
+        </section>
+
+        <section class="panel toolbar" aria-label="筛选和排序">
+            <input class="input" type="search" id="searchInput" placeholder="搜索名称或 URL">
+            <select class="select" id="statusFilter" aria-label="状态筛选">
+                <option value="all">全部状态</option>
+                <option value="up">只看在线</option>
+                <option value="down">只看异常</option>
+                <option value="unknown">只看未知</option>
+                <option value="ssl-risk">SSL 即将到期</option>
+            </select>
+            <select class="select" id="sortSelect" aria-label="排序方式">
+                <option value="priority">异常优先</option>
+                <option value="latest">最近检查</option>
+                <option value="response">响应时间</option>
+                <option value="name">名称排序</option>
+            </select>
+            <div class="refresh-state" id="refreshState">自动刷新：60 秒后</div>
+        </section>
+
+        <section id="sitesContainer" aria-live="polite">
+            <div class="loading">
+                <div>
+                    <div class="spinner"></div>
+                    <div>正在加载监控数据...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-backdrop" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="historyTitle">检测历史</h2>
+                <button class="button small-button" type="button" id="closeHistoryButton">关闭</button>
+            </div>
+            <div class="modal-body" id="historyBody"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toastContainer" aria-live="polite"></div>
+    <script src="/static/app.js" defer></script>
+</body>
+</html>
