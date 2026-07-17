@@ -44,11 +44,11 @@
             <form class="add-form" id="addForm">
                 <div class="field">
                     <label for="siteName">网站名称</label>
-                    <input class="input" type="text" id="siteName" placeholder="例如：公司官网" autocomplete="off" required>
+                    <input class="input" type="text" id="siteName" placeholder="例如：公司官网" autocomplete="off" maxlength="120" required>
                 </div>
                 <div class="field">
                     <label for="siteUrl">网站地址</label>
-                    <input class="input" type="text" id="siteUrl" placeholder="example.com 或 https://example.com" autocomplete="off" required>
+                    <input class="input" type="text" id="siteUrl" placeholder="example.com 或 https://example.com" autocomplete="off" maxlength="2048" required>
                 </div>
                 <button class="button primary" id="addButton" type="submit">添加站点</button>
             </form>
@@ -82,7 +82,7 @@
         </section>
     </main>
 
-    <div class="modal-backdrop" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="modal-backdrop" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle" aria-hidden="true">
         <div class="modal">
             <div class="modal-header">
                 <h2 class="modal-title" id="historyTitle">检测历史</h2>

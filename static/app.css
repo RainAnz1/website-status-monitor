@@ -493,6 +493,14 @@ h1 {
     padding: 28px;
 }
 
+.state-detail {
+    margin-top: 8px;
+}
+
+.compact-state {
+    min-height: 180px;
+}
+
 .spinner {
     width: 28px;
     height: 28px;
@@ -642,6 +650,12 @@ h1 {
     .outage-item {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .section-heading {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
     }
 
     .card-actions {

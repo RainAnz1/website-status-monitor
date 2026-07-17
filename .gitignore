@@ -1,4 +1,14 @@
 .venv/
+venv/
 __pycache__/
 *.pyc
-monitor.db
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log
+*.db
+*.db-shm
+*.db-wal

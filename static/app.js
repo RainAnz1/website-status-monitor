@@ -13,7 +13,8 @@ const state = {
     refreshIn: readRefreshSeconds(),
     pendingChecks: new Set(),
     pendingDelete: new Set(),
-    checkingAll: false
+    checkingAll: false,
+    lastFocusedElement: null
 };
 
 const $ = (id) => document.getElementById(id);
@@ -50,12 +51,17 @@ function bindCommonControls() {
     $("historyModal")?.addEventListener("click", (event) => {
         if (event.target.id === "historyModal") closeHistory();
     });
+    $("sitesContainer")?.addEventListener("click", handleSiteAction);
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && $("historyModal")?.classList.contains("open")) {
+            closeHistory();
+        }
+    });
 
     const refreshInput = $("refreshInterval");
     if (refreshInput) {
         refreshInput.value = String(state.refreshSeconds);
         refreshInput.addEventListener("change", saveRefreshSetting);
-        refreshInput.addEventListener("blur", saveRefreshSetting);
     }
     updateRefreshState();
 }
@@ -110,7 +116,7 @@ function renderError(message) {
         <div class="error-state">
             <div>
                 <strong>数据加载失败</strong>
-                <div style="margin-top:8px;">${escapeHtml(message)}</div>
+                <div class="state-detail">${escapeHtml(message)}</div>
             </div>
         </div>
     `;
@@ -132,7 +138,7 @@ function render() {
             <div class="empty">
                 <div>
                     <strong>还没有监控站点</strong>
-                    <div style="margin-top:8px;">${emptyText}</div>
+                    <div class="state-detail">${emptyText}</div>
                 </div>
             </div>
         `;
@@ -144,7 +150,7 @@ function render() {
             <div class="empty">
                 <div>
                     <strong>没有匹配的站点</strong>
-                    <div style="margin-top:8px;">试试调整搜索关键词或筛选条件。</div>
+                    <div class="state-detail">试试调整搜索关键词或筛选条件。</div>
                 </div>
             </div>
         `;
@@ -190,9 +196,9 @@ function renderSite(site) {
         : "";
     const actionsHtml = state.mode === "admin" ? `
         <div class="card-actions">
-            <button class="button small-button" type="button" onclick="openHistory(${site.id})">历史</button>
-            <button class="button small-button" type="button" onclick="recheckSite(${site.id})" ${isChecking ? "disabled" : ""}>${isChecking ? "检测中" : "检测"}</button>
-            <button class="button small-button danger" type="button" onclick="removeSite(${site.id})" ${isDeleting ? "disabled" : ""}>${isDeleting ? "删除中" : "删除"}</button>
+            <button class="button small-button" type="button" data-site-action="history" data-site-id="${site.id}">历史</button>
+            <button class="button small-button" type="button" data-site-action="check" data-site-id="${site.id}" ${isChecking ? "disabled" : ""}>${isChecking ? "检测中" : "检测"}</button>
+            <button class="button small-button danger" type="button" data-site-action="delete" data-site-id="${site.id}" ${isDeleting ? "disabled" : ""}>${isDeleting ? "删除中" : "删除"}</button>
         </div>
     ` : "";
     const idHtml = state.mode === "admin" ? `<div>站点 ID：${site.id}</div>` : "";
@@ -239,6 +245,20 @@ function renderSite(site) {
             </div>
         </article>
     `;
+}
+
+function handleSiteAction(event) {
+    if (!(event.target instanceof Element)) return;
+
+    const button = event.target.closest("[data-site-action]");
+    if (!button || !event.currentTarget.contains(button)) return;
+
+    const siteId = Number(button.dataset.siteId);
+    if (!Number.isInteger(siteId) || siteId <= 0) return;
+
+    if (button.dataset.siteAction === "history") openHistory(siteId);
+    if (button.dataset.siteAction === "check") recheckSite(siteId);
+    if (button.dataset.siteAction === "delete") removeSite(siteId);
 }
 
 function renderOutages(outages) {
@@ -355,10 +375,11 @@ async function openHistory(id) {
     const body = $("historyBody");
     if (!modal || !body) return;
 
+    state.lastFocusedElement = document.activeElement;
     const site = state.sites.find((item) => item.id === id);
     $("historyTitle").textContent = site ? `${site.name} 的检测历史` : "检测历史";
     body.innerHTML = `
-        <div class="loading" style="min-height:180px;">
+        <div class="loading compact-state">
             <div>
                 <div class="spinner"></div>
                 <div>正在加载历史记录...</div>
@@ -366,6 +387,8 @@ async function openHistory(id) {
         </div>
     `;
     modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    $("closeHistoryButton")?.focus();
 
     try {
         const response = await fetch(`${API_BASE}/api/sites/${id}/checks`);
@@ -382,7 +405,7 @@ function renderHistory(checks) {
     if (!body) return;
 
     if (!checks.length) {
-        body.innerHTML = `<div class="empty" style="min-height:180px;">暂无检测历史</div>`;
+        body.innerHTML = `<div class="empty compact-state">暂无检测历史</div>`;
         return;
     }
 
@@ -415,7 +438,13 @@ function renderHistory(checks) {
 }
 
 function closeHistory() {
-    $("historyModal")?.classList.remove("open");
+    const modal = $("historyModal");
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden", "true");
+    if (state.lastFocusedElement instanceof HTMLElement) {
+        state.lastFocusedElement.focus();
+    }
+    state.lastFocusedElement = null;
 }
 
 function updateSummary() {
@@ -455,7 +484,7 @@ function saveRefreshSetting() {
     state.refreshSeconds = nextValue;
     state.refreshIn = nextValue;
     input.value = String(nextValue);
-    localStorage.setItem(REFRESH_STORAGE_KEY, String(nextValue));
+    writeRefreshSeconds(nextValue);
     updateRefreshState();
     toast(nextValue === 0 ? "已关闭自动刷新" : `自动刷新已设置为 ${nextValue} 秒`);
 }
@@ -514,12 +543,25 @@ function toast(message, type = "normal") {
 }
 
 function readRefreshSeconds() {
-    const savedRaw = localStorage.getItem(REFRESH_STORAGE_KEY);
+    let savedRaw;
+    try {
+        savedRaw = localStorage.getItem(REFRESH_STORAGE_KEY);
+    } catch {
+        return DEFAULT_REFRESH_SECONDS;
+    }
     if (savedRaw === null) return DEFAULT_REFRESH_SECONDS;
 
     const saved = Number(savedRaw);
     if (!Number.isFinite(saved) || saved < 0) return DEFAULT_REFRESH_SECONDS;
     return Math.round(saved);
+}
+
+function writeRefreshSeconds(value) {
+    try {
+        localStorage.setItem(REFRESH_STORAGE_KEY, String(value));
+    } catch {
+        // 浏览器禁用本地存储时，本次页面会话内的设置仍然有效。
+    }
 }
 
 function getStatusClass(status) {
@@ -594,7 +636,3 @@ function escapeHtml(text) {
 function escapeAttr(text) {
     return escapeHtml(text).replace(/"/g, "&quot;");
 }
-
-window.openHistory = openHistory;
-window.recheckSite = recheckSite;
-window.removeSite = removeSite;
